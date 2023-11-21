@@ -18,22 +18,28 @@ async function run() {
 	await conn.connect();
 	await conn.query('SELECT version()');
 	await conn.query('DROP TABLE IF EXISTS RaicherVictor');
-	await new Promise((resolve, reject) => {
-		https.get('https://rickandmortyapi.com/api/character', (resp) => {
-			const data = [];
-			resp.on('data', (chunk) => {
-				data.push(chunk);
+	let nextURL = 'https://rickandmortyapi.com/api/character';
+	let count = 0;
+	while (nextURL && count < 100) {
+		await new Promise((resolve, reject) => {
+			https.get(nextURL, (resp) => {
+				const data = [];
+				resp.on('data', (chunk) => {
+					data.push(chunk);
+				});
+				resp.on('end', () => {
+					const buff = Buffer.concat(data);
+					const obj = JSON.parse(buff);
+					nextURL = obj.info.next;
+					arr = arr.concat(obj.results);
+					count++;
+					resolve();
+				});
+			}).on('error', (err) => {
+				reject(err);
 			});
-			resp.on('end', () => {
-				const buff = Buffer.concat(data);
-				const obj = JSON.parse(buff);
-				arr = obj.results;
-				resolve();
-			});
-		}).on('error', (err) => {
-			reject(err);
 		});
-	});
+	}
 	await conn.query('CREATE TABLE RaicherVictor(id serial PRIMARY KEY,name text,data jsonb)');
 	const comm = 'INSERT INTO RaicherVictor(name,data) VALUES($1, $2)';
 	console.log(comm);

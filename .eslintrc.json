@@ -24,6 +24,7 @@
                 "optionalDependencies": false,
                 "peerDependencies": false
             }
-        ]
+        ],
+        "no-loop-func": "off"
     }
 }
